@@ -1,52 +1,13 @@
-import { useState } from "react";
 import ReactAnimatedWeather from "react-animated-weather";
-import LoaderWithMessages from "./Loader";
-
-type WeatherCondition = {
-  icon_url: string;
-  description: string;
-};
-
-type WeatherData = {
-  city: string;
-  country: string;
-  temperature: {
-    current: number;
-    humidity: number;
-  };
-  wind: {
-    speed: number;
-  };
-  condition: WeatherCondition;
-};
-
-type ForecastDay = {
-  time: number;
-  temperature: {
-    minimum: number;
-    maximum: number;
-  };
-  condition: WeatherCondition;
-};
+import { WeatherPredictionResponse } from "../types";
 
 type ForecastProps = {
-  weather: WeatherData;
+  isLoading: boolean;
+  weather: WeatherPredictionResponse;
 };
 
-const Forecast: React.FC<ForecastProps> = ({ weather }) => {
+const Forecast: React.FC<ForecastProps> = ({ weather, isLoading }) => {
   const data = weather;
-  const [loading, setLoading] = useState(true); // Manage loading state
-  const [forecastData] = useState<ForecastDay[]>([
-    /* Dummy data */
-  ]);
-
-  const [isCelsius, setIsCelsius] = useState(true); // Track temperature unit
-
-  const formatDay = (dateString: number): string => {
-    const options: Intl.DateTimeFormatOptions = { weekday: "short" };
-    const date = new Date(dateString * 1000);
-    return date.toLocaleDateString("en-US", options);
-  };
 
   const getCurrentDate = (): string => {
     const options: Intl.DateTimeFormatOptions = {
@@ -58,25 +19,15 @@ const Forecast: React.FC<ForecastProps> = ({ weather }) => {
     return new Date().toLocaleDateString("en-US", options);
   };
 
-  const toggleTemperatureUnit = (): void => {
-    setIsCelsius((prevState) => !prevState);
-  };
-
-  const convertToFahrenheit = (temperature: number): number => {
-    return Math.round((temperature * 9) / 5 + 32);
-  };
-
-  const renderTemperature = (temperature: number): number => {
-    return isCelsius
-      ? Math.round(temperature)
-      : convertToFahrenheit(temperature);
+  const truncateAfterDecimal = (value: string): string => {
+    return value.split(".")[0];
   };
 
   return (
     <div>
       <div className="city-name">
         <h2>
-          {data.city}, <span>{data.country}</span>
+          Islamabad, <span>Pakistan</span>
         </h2>
       </div>
       <div className="date">
@@ -85,40 +36,26 @@ const Forecast: React.FC<ForecastProps> = ({ weather }) => {
       <div className="date">
         <span>{getCurrentDate()}</span>
       </div>
-      {loading && (
-        <LoaderWithMessages />
-      )}
-      {!loading && (
+      {!isLoading && (
         <>
           <div className="temp">
-            {data.condition.icon_url && (
-              <ReactAnimatedWeather icon="RAIN" size={140} />
-            )}
-            {renderTemperature(data.temperature.current)}
-            <sup className="temp-deg" onClick={toggleTemperatureUnit}>
-              {isCelsius ? "°C" : "°F"} | {isCelsius ? "°F" : "°C"}
-            </sup>
+            <ReactAnimatedWeather icon="PARTLY_CLOUDY_DAY" size={140} />
+            {truncateAfterDecimal(data.predicted_temperature)}
+            <sup className="temp-deg">°C</sup>
           </div>
 
           <div className="temp">
-            290
-            <sup className="temp-deg" onClick={toggleTemperatureUnit}>
-              AQI
-            </sup>
+          <ReactAnimatedWeather icon="FOG" size={140} />
+            To be done...
+            <sup className="temp-deg">AQI</sup>
           </div>
-          <p className="weather-des">{data.condition.description}</p>
           <div className="weather-info">
+    
             <div className="col">
-              <ReactAnimatedWeather icon="WIND" size={40} />
               <div>
-                <p className="wind">{data.wind.speed}m/s</p>
-                <p>Wind speed</p>
-              </div>
-            </div>
-            <div className="col">
-              <ReactAnimatedWeather icon="RAIN" size={40} />
-              <div>
-                <p className="humidity">{data.temperature.humidity}%</p>
+                <p className="humidity">
+                  {truncateAfterDecimal(data.avg_humidity)}%
+                </p>
                 <p>Humidity</p>
               </div>
             </div>

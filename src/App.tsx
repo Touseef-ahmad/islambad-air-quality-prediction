@@ -1,55 +1,66 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Forecast from "./components/Forecast";
 
 import "./styles.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import { WeatherData } from "./types";
+import LoaderWithMessages from "./components/Loader";
+import { WeatherPredictionResponse } from "./types";
 
-type WeatherState = {
-  loading: boolean;
-  data: WeatherData | null;
-  error: boolean;
+const useGetWeatherPrediction = () => {
+  const [data, setData] = useState<WeatherPredictionResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const predictWeather = (date: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    // Helper function to create a delay
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    Promise.all([
+      fetch("http://54.174.253.200:8000/predict-temperature", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          accept: "application/json",
+        },
+        body: JSON.stringify({ date }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        }),
+      delay(4000), // Minimum wait of 4 seconds
+    ])
+      .then(([responseData]) => {
+        setData(responseData as WeatherPredictionResponse);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        setError(error.message);
+        setIsLoading(false);
+      });
+  };
+
+  return { data, isLoading, error, predictWeather };
 };
 
+
 function App() {
-  const [weather, setWeather] = useState<WeatherState>({
-    loading: true,
-    data: null,
-    error: false,
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const today = new Date();
+    return today.toISOString().split("T")[0]; // Format: YYYY-MM-DD
   });
 
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const { data, isLoading, predictWeather } = useGetWeatherPrediction();
 
   useEffect(() => {
-    const fetchDummyData = async () => {
-      const dummyData: WeatherData = {
-        city: "Islamabad",
-        country: "Pakistan",
-        temperature: {
-          current: 25,
-          humidity: 60,
-        },
-        wind: {
-          speed: 5,
-        },
-        condition: {
-          icon_url: "https://dummyimage.com/100x100/000/fff&text=Icon",
-          description: "Sunny",
-        },
-      };
-
-      try {
-        setTimeout(() => {
-          setWeather({ loading: false, data: dummyData, error: false });
-        }, 1000); // Simulating a network delay
-      } catch (error) {
-        setWeather({ loading: false, data: null, error: true });
-        console.log("error", error);
-      }
-    };
-
-    fetchDummyData();
-  }, []);
+    predictWeather(selectedDate);
+  }
+  , [selectedDate]);
 
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedDate(event.target.value);
@@ -58,7 +69,7 @@ function App() {
   return (
     <div className="App">
       <div className="date-picker">
-        <label htmlFor="date">Select Date: </label>
+        <label className="date" htmlFor="date">Select Date: </label>
         <input
           type="date"
           id="date"
@@ -66,29 +77,10 @@ function App() {
           onChange={handleDateChange}
         />
       </div>
-      {weather.loading && (
-        <>
-          <br />
-          <br />
-          <h4>Searching..</h4>
-        </>
-      )}
+      {isLoading && <LoaderWithMessages />}
 
-      {weather.error && (
-        <>
-          <br />
-          <br />
-          <span className="error-message">
-            <span style={{ fontFamily: "font" }}>
-              Sorry city not found, please try again.
-            </span>
-          </span>
-        </>
-      )}
-
-      {weather.data && weather.data.condition && (
-        // Forecast component
-        <Forecast weather={weather.data} />
+      {data && (
+        <Forecast isLoading={isLoading} weather={data} />
       )}
     </div>
   );

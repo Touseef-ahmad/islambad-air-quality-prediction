@@ -13,7 +13,7 @@ const LoaderWithMessages: React.FC = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
-    }, 2000); // Change message every 2 seconds
+    }, 1000); // Change message every 2 seconds
 
     return () => clearInterval(interval); // Cleanup on unmount
   }, []);
