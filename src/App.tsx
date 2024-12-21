@@ -19,7 +19,7 @@ const useGetWeatherPrediction = () => {
     const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
     Promise.all([
-      fetch("http://54.174.253.200:8000/predict-temperature", {
+      fetch("https://54.174.253.200:8000/predict-temperature", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
